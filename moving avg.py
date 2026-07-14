@@ -2,13 +2,13 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 import numpy as np
 TICKER = "META"
-df = yf.download (TICKER, start= '2010-01-01', end= '2026-01-01')
+df = yf.download (TICKER, start= '2020-01-01', end= '2026-01-01')
 df['MA50'] = df['Close'].rolling(50).mean()
 df['MA20'] = df['Close'].rolling(20).mean()
 df.columns = df.columns.get_level_values(0)
 #when to buy and sell using dummy value of $1000 
 df['daily_return'] = df['Close'].pct_change()
-df['Buy'] = np.where(df['MA20'] > df['MA50'] , 1, 0)
+df['Buy'] = np.where(df['MA20'] > df['MA50'] , 0 , -1)
 df = df.dropna()
 df['Strategy'] = df['daily_return'] * df['Buy'].shift(1)
 df['invested_1000'] =  1000 * np.cumprod(1 + df['Strategy'])
