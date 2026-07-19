@@ -10,7 +10,7 @@ rsi_period = 14
 buy = 30
 sell = 70
 ticker = 'SPY'
-days = -10000
+days = -1000
 df = yf.download(ticker, start = start_date, end =  date.today())
 df.columns = df.columns.get_level_values(0)
 vals['diff'] =  df['Close'].diff()
