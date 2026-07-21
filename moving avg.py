@@ -5,7 +5,7 @@ from datetime import date
 TICKER = "SPY"
 Fast_moving = 20
 Slow_moving = 50
-start_date = '2000-01-01'
+start_date = '1900-01-01'
 dummy_value = 1000
 days = -1000
 df = yf.download (TICKER, start= start_date, end= date.today())

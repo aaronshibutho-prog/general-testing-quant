@@ -4,7 +4,7 @@ import yfinance as yf
 import pandas as pd
 from datetime import date
 vals =  pd.DataFrame()
-start_date = '2000-01-01'
+start_date = '1900-01-01'
 dummy_value =  1000
 rsi_period = 14
 buy = 30

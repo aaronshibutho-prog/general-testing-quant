@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 ticker = "SPY"
 dummy_value = 1000
 days = -1000
-df = yf.download(ticker, start="2000-01-01", end=date.today())
+df = yf.download(ticker, start="1900-01-01", end=date.today())
 df.columns = df.columns.get_level_values(0)
 df['12EMA'] = df['Close'].ewm(span=12, adjust=False).mean()
 df['26EMA'] = df['Close'].ewm(span=26, adjust=False).mean()
