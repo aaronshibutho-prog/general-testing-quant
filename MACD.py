@@ -5,15 +5,18 @@ import matplotlib.pyplot as plt
 ticker = "SPY"
 dummy_value = 1000
 days = -1000
+fema = 12
+sema = 26
+bema = 9
 df = yf.download(ticker, start="1900-01-01", end=date.today())
 df.columns = df.columns.get_level_values(0)
-df['12EMA'] = df['Close'].ewm(span=12, adjust=False).mean()
-df['26EMA'] = df['Close'].ewm(span=26, adjust=False).mean()
-df['MACD'] = df['12EMA'] - df['26EMA']
-df['9EMA'] = df['MACD'].ewm(span=9, adjust=False).mean()
-df['hist'] = df['MACD'] - df['9EMA']
+df['FEMA'] = df['Close'].ewm(span=fema, adjust=False).mean()
+df['SEMA'] = df['Close'].ewm(span=sema, adjust=False).mean()
+df['MACD'] = df['FEMA'] - df['SEMA']
+df['BEMA'] = df['MACD'].ewm(span=bema, adjust=False).mean()
+df['hist'] = df['MACD'] - df['BEMA']
 df['daily'] = df['Close'].pct_change()
-df['position'] = np.where(df['MACD'] > df['9EMA'], 1, 0)
+df['position'] = np.where(df['MACD'] > df['BEMA'], 1, 0)
 df['strategy_value'] = dummy_value * np.cumprod(1 + (df['daily'] * df['position'].shift(1)).fillna(0))
 df['buy_hold_value'] = dummy_value * np.cumprod(1 + df['daily'].fillna(0))
 plot_df = df.iloc[days:].copy()
@@ -29,7 +32,7 @@ ax1.set_title(f'{ticker}: MACD strategy vs buy & hold (last 500 days)')
 ax1.set_ylabel('Portfolio value ($)')
 ax1.legend()
 ax2.plot(plot_df.index, plot_df['MACD'], label='MACD', color='blue')
-ax2.plot(plot_df.index, plot_df['9EMA'], label='Signal', color='orange')
+ax2.plot(plot_df.index, plot_df['BEMA'], label='Signal', color='orange')
 ax2.bar(plot_df.index, plot_df['hist'], width=2,
         color=np.where(plot_df['hist'] >= 0, 'green', 'red'))
 ax2.axhline(0, color='gray', linewidth=0.8)
