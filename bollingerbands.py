@@ -1,14 +1,23 @@
 import yfinance as yf
-import pandas as pd
 import numpy as np
 import matplotlib.pylab as plt
-from datetime import date
+from datetime import date, timedelta
 dummy_value = 1000
-days = -10000
-startDate = '2020-01-01'
+lookback = -1000
+start_date = '1900-01-01'
 ticker = 'SPY'
 moving_avg = 20
-df = yf.download(ticker, start = startDate, end = date.today())
+interval = '1h'
+interval_limits = {
+    '1m': 6,
+    '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
+    '60m': 729, '1h': 729,
+}
+if interval in interval_limits:
+    start_date = date.today() - timedelta(days=interval_limits[interval])
+else:
+    start_date = '1900-01-01'
+df = yf.download(ticker, start = start_date, end = date.today(), interval= interval)
 df.columns = df.columns.get_level_values(0)
 df['middle_band'] = df['Close'].rolling(moving_avg).mean()
 df['mvstd'] = df['Close'].rolling(moving_avg).std()
@@ -21,7 +30,7 @@ df['position'] = df['signal'].ffill(). fillna(0). shift(1)
 df['dailyReturn'] = df['Close'].pct_change()
 df['strategy'] = dummy_value * np.cumprod( 1 + df['dailyReturn'].fillna(0) * df['position'].fillna(0))
 df['buy_hold'] = dummy_value * np.cumprod(1 + df['dailyReturn'].fillna(0))
-pltdf = df[days: ].copy()
+pltdf = df[lookback: ].copy()
 pltdf['strategy'] = pltdf['strategy'] / pltdf['strategy'].iloc[0] * dummy_value
 pltdf['buy_hold'] = pltdf['buy_hold'] / pltdf['buy_hold'].iloc[0] * dummy_value
 fig, (ax1, ax2) = plt.subplots(2,1, figsize = (12,8), sharex = True)

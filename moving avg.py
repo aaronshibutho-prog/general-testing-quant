@@ -1,14 +1,19 @@
 import yfinance as yf
 import matplotlib.pyplot as plt
 import numpy as np
-from datetime import date
+from datetime import date,timedelta
 TICKER = "SPY"
 Fast_moving = 20
 Slow_moving = 50
 start_date = '1900-01-01'
 dummy_value = 1000
 days = -1000
-df = yf.download (TICKER, start= start_date, end= date.today())
+interval = '1h'
+if interval in ['1m','2m','5m','15m','30m','60m','90m','1h']:
+    start_date = date.today() - timedelta(days=729)
+else:
+    start_date = '1900-01-01'
+df = yf.download (TICKER, start= start_date, end= date.today(), interval= interval)
 df['MA50'] = df['Close'].rolling(Slow_moving).mean()
 df['MA20'] = df['Close'].rolling(Fast_moving).mean()
 df.columns = df.columns.get_level_values(0)

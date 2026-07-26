@@ -1,6 +1,6 @@
 import yfinance as yf
 import numpy as np
-from datetime import date
+from datetime import date, timedelta
 import matplotlib.pyplot as plt
 ticker = "SPY"
 dummy_value = 1000
@@ -8,7 +8,13 @@ days = -1000
 fema = 12
 sema = 26
 bema = 9
-df = yf.download(ticker, start="1900-01-01", end=date.today())
+start_date = '1900-01-01'
+interval = '1h'
+if interval in ['1m','2m','5m','15m','30m','60m','90m','1h']:
+    start_date = date.today() - timedelta(days=729)
+else:
+    start_date = '1900-01-01'
+df = yf.download(ticker, start=start_date, end=date.today(), interval= interval)
 df.columns = df.columns.get_level_values(0)
 df['FEMA'] = df['Close'].ewm(span=fema, adjust=False).mean()
 df['SEMA'] = df['Close'].ewm(span=sema, adjust=False).mean()

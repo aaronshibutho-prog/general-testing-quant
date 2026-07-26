@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import yfinance as yf
 import pandas as pd
-from datetime import date
+from datetime import date,timedelta
 vals =  pd.DataFrame()
 start_date = '1900-01-01'
 dummy_value =  1000
@@ -10,8 +10,18 @@ mfi_period = 14
 buy = 20
 sell = 80
 ticker = 'SPY'
-days = -1000
-df = yf.download(ticker, start = start_date, end =  date.today())
+lookback = -1000
+interval = '1d'
+interval_limits = {
+    '1m': 6,
+    '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
+    '60m': 729, '1h': 729,
+}
+if interval in interval_limits:
+    start_date = date.today() - timedelta(days=interval_limits[interval])
+else:
+    start_date = '1900-01-01'
+df = yf.download(ticker, start = start_date, end =  date.today(), interval= interval)
 df.columns = df.columns.get_level_values(0)
 vals['tipsVal'] = (df['High'] + df['Low'] + df['Close']) / 3
 vals['rmf'] = vals['tipsVal'] * df['Volume']
@@ -27,7 +37,7 @@ df['signal'] = np.select(condition, combinations, default = np.nan)
 df['position'] = df['signal'].ffill().fillna(0).shift(1)
 df['strategy'] = dummy_value * np.cumprod(1 + df['dailyReturns'].fillna(0) * df['position'].fillna(0)) 
 df['buy_hold'] = dummy_value * np.cumprod(1 + df['dailyReturns'].fillna(0))
-pltdf = df[days:].copy()
+pltdf = df[lookback:].copy()
 pltdf['strategy'] = pltdf['strategy'] / pltdf['strategy'].iloc[0] * dummy_value
 pltdf['buy_hold'] = pltdf['buy_hold'] / pltdf['buy_hold'].iloc[0] * dummy_value
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
