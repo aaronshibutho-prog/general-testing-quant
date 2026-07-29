@@ -7,10 +7,15 @@ Fast_moving = 20
 Slow_moving = 50
 start_date = '1900-01-01'
 dummy_value = 1000
-days = -1000
+lookback = -1000
 interval = '1h'
-if interval in ['1m','2m','5m','15m','30m','60m','90m','1h']:
-    start_date = date.today() - timedelta(days=729)
+interval_limits = {
+    '1m': 6,
+    '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
+    '60m': 729, '1h': 729,
+}
+if interval in interval_limits:
+    start_date = date.today() - timedelta(days=interval_limits[interval])
 else:
     start_date = '1900-01-01'
 df = yf.download (TICKER, start= start_date, end= date.today(), interval= interval)
@@ -23,7 +28,7 @@ df = df.dropna()
 df['Strategy'] = (df['daily_return'] * df['Buy'].shift(1)).fillna(0)
 df['invested_1000'] =  dummy_value * np.cumprod(1 + df['Strategy'])
 df['normal_return'] = dummy_value * np.cumprod(1 + df['daily_return'])
-plot_df = df.iloc[days:].copy()
+plot_df = df.iloc[lookback:].copy()
 plot_df['strategy_value'] = plot_df['invested_1000'] / plot_df['invested_1000'].iloc[0] * dummy_value
 plot_df['buy_hold_value'] = plot_df['Close'] / plot_df['Close'].iloc[0] * dummy_value
 plt.style.use('dark_background')
