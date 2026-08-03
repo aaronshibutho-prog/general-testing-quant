@@ -3,6 +3,7 @@ import matplotlib.pylab as plt
 import yfinance as yf
 from datetime import date, timedelta
 import pandas as pd
+from sklearn.linear_model import LinearRegression
 #   Amalgamation of technical indicators to find the ideal signal combination
 #   Preferred combos: 
 #   MACD + RSI    -> trend + momentum
@@ -15,10 +16,9 @@ import pandas as pd
 #   MA   + MFI    -> trend + volume
 #   MACD + RSI + MFI   -> trend + momentum + volume (3-way, still no overlap)
 #   MA   + BOLL + MFI  -> trend + mean-reversion + volume (3-way, still no overlap)
-tech_in = [ 'RSI' , 'MA' ]
+tech_in = [ 'RSI' , 'MA', 'MFI', 'BOLL' , 'MACD']
 tech_in = [x.lower() for x in tech_in]
-# In the dict below, fill in only the indicators you want to use and assign each a weight (RSI, BOLL, MACD, MFI, MA)
-weights = { 'w_rsi' : 1 , 'w_boll': 1,  'w_macd': 1, 'w_mfi': 1, 'w_ma': 1 }
+weights = {}
 Fast_moving = 20
 Slow_moving = 50
 mfi_period = 14
@@ -32,9 +32,9 @@ fema = 12
 sema = 26
 bema = 9
 # Normalize weighted indicator score to [-1, +1]; Can be changed based on risk appetite
-buy_indicatior = 0.49
-sell_indicator = -0.49
-TICKER = "META"
+buy_indicatior = 0.15
+sell_indicator = -0.15
+TICKER = "msft"
 start_date = '1900-01-01'
 dummy_value = 1000
 lookback = -1000
@@ -55,6 +55,7 @@ def moving_avg():
     vals['MA50'] = df['Close'].rolling(Slow_moving).mean()
     vals['MA20'] = df['Close'].rolling(Fast_moving).mean()
     df['mov_position'] = np.where(vals['MA20'] > vals['MA50'] , 1 , -1)
+    df['mov_position'] = df['mov_position'].shift(1)
 def mfi():
     vals['mfi_tipsVal'] = (df['High'] + df['Low'] + df['Close']) / 3
     vals['mfi_rmf'] = vals['mfi_tipsVal'] * df['Volume']
@@ -96,9 +97,16 @@ def MACD():
     df['macd_position'] = np.where(vals['MACD'] > vals['BEMA'], 1, -1)
     df['macd_position'] = df['macd_position'].shift(1)
 
+def reg_weights():
+    x = df[['mov_position', 'mfi_position', 'rsi_position', 'boll_position', 'macd_position']]
+    y = df['Close'].pct_change()
+    valid = x.join(y.rename('y')).dropna()
+    model = LinearRegression().fit(valid[x.columns], valid['y'])
+    print(model.score(valid[x.columns], valid['y']))
+    return dict(zip(x.columns, model.coef_))
+
 for col in ['rsi_position', 'boll_position', 'macd_position', 'mfi_position', 'mov_position']:
     df[col] = 0
-total_weight = sum(weights.get(f'w_{i}' if i != 'boll' else 'w_boll', 0) for i in tech_in)
 for i in tech_in:
     if "rsi" == i:
         rsi()
@@ -110,12 +118,20 @@ for i in tech_in:
         mfi()
     if 'ma' == i:
         moving_avg()
+weights = reg_weights()
+weights= pd.Series(weights)
+print(weights)
+norm_weights = weights.abs() / weights.abs().sum()
+w_ma   = norm_weights['mov_position']
+w_mfi  = norm_weights['mfi_position']
+w_rsi  = norm_weights['rsi_position']
+w_boll = norm_weights['boll_position']
+w_macd = norm_weights['macd_position']
 df['dailyReturns'] = df['Close'].pct_change()
-df['totalPosition'] = df['rsi_position'] * weights.get('w_rsi', 0) + df['boll_position'] * weights.get('w_boll', 0) + df['macd_position'] * weights.get('w_macd', 0) + df['mfi_position'] * weights.get('w_mfi', 0) + df['mov_position'] * weights.get('w_ma', 0)
-normalised_score = df['totalPosition'] / total_weight
-df['signal'] = np.select([normalised_score > buy_indicatior, normalised_score < sell_indicator], [1, -1])
+df['totalPosition'] = df['rsi_position'] * w_rsi + df['boll_position'] * w_boll + df['macd_position'] * w_macd + df['mfi_position'] * w_mfi + df['mov_position'] * w_ma
+df['signal'] = np.select([df['totalPosition'] > buy_indicatior, df['totalPosition'] < sell_indicator], [1, -1])
 df['strategy'] = dummy_value * np.cumprod(1 + df['dailyReturns'].fillna(0) * df['signal'].fillna(0))
-df['buy_hold'] = dummy_value *np.cumprod(1 + df['dailyReturns'] )
+df['buy_hold'] = dummy_value *np.cumprod(1 + df['dailyReturns'].fillna(0) )
 pdf = df[lookback:].copy()
 pdf['strategy'] =  pdf['strategy'] / pdf['strategy'].iloc[0] * dummy_value
 pdf['buy_hold'] =  pdf['buy_hold'] / pdf['buy_hold'].iloc[0] * dummy_value
