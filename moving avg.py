@@ -2,13 +2,33 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import date,timedelta
+import pandas as pd
 TICKER = "SPY"
+#The program will go through all the possible combinations to find the best performance one as the default
 Fast_moving = 20
 Slow_moving = 50
 start_date = '1900-01-01'
 dummy_value = 1000
 lookback = -1000
-interval = '1h'
+interval = '1d'
+
+def corr_backtest():
+    test = yf.download (TICKER, start= start_date, end= date.today(), interval= interval)
+    amal = pd.DataFrame({'Fast' : range (1, Fast_moving+1)})
+    slow_avgs = pd.DataFrame(index=test.index)
+    for window in range(1, Slow_moving+1):
+        slow_avgs[f'Slow_Avg_{window}'] = test['Close'].rolling(window).mean()
+        slow_avgs = slow_avgs.dropna()
+    fast_avgs = pd.DataFrame(index=test.index)
+    for window in range(1, Fast_moving+1):
+        fast_avgs[f'Fast_Avg_{window}'] = test['Close'].rolling(window).mean()
+        fast_avgs = fast_avgs.dropna() 
+    print(fast_avgs)
+
+    
+
+corr_backtest()
+
 interval_limits = {
     '1m': 6,
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
