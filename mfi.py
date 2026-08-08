@@ -11,7 +11,7 @@ buy = 20
 sell = 80
 ticker = 'SPY'
 lookback = -1000
-interval = '1d'
+interval = '1h'
 interval_limits = {
     '1m': 6,
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,

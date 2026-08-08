@@ -122,6 +122,7 @@ weights = reg_weights()
 weights= pd.Series(weights)
 print(weights)
 norm_weights = weights.abs() / weights.abs().sum()
+## you may put manual weights
 w_ma   = norm_weights['mov_position']
 w_mfi  = norm_weights['mfi_position']
 w_rsi  = norm_weights['rsi_position']
