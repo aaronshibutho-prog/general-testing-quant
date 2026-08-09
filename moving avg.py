@@ -19,10 +19,10 @@ interval_limits = {
 if interval in interval_limits:
     start_date = date.today() - timedelta(days=interval_limits[interval])
 else:
-    start_date = '1900-01-01'
+    start_date = '2000-01-01'
 
 def backtest():
-    data = yf.download (TICKER, start= start_date, end= date.today(), interval= interval, multi_level_index=False) 
+    data = yf.download (TICKER, start= start_date, end= date.today(), interval= '1d', multi_level_index=False) 
     split = int (len(data) * 0.7)
     train = data.iloc[:split, :]
     daily_ret = train['Close'].pct_change()
