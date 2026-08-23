@@ -6,7 +6,6 @@ dummy_value = 1000
 lookback = -1000
 start_date = '1900-01-01'
 ticker = 'SPY'
-moving_avg = 20
 interval = '1d'
 interval_limits = {
     '1m': 6,
@@ -24,7 +23,7 @@ prev_low = df['Low'].shift(1)
 df['pivot'] = (prev_close + prev_high + prev_low) / 3
 df['bc'] = (prev_high + prev_low) / 2
 df['tc'] = 2 * df['pivot'] - df['bc']
-combination = [1 , -1]
+combination = [1 , 0]
 condition = [df['Close'] > df['tc'] , df['Close'] < df['bc']]
 df['signal'] = np.select(condition, combination, default = np.nan)
 df['position'] = df['signal'].ffill().fillna(0).shift(1)
