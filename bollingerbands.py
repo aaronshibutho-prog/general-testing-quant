@@ -20,9 +20,8 @@ else:
 df = yf.download(ticker, start = start_date, end = date.today(), interval= interval, multi_level_index= False)
 df['middle_band'] = df['Close'].rolling(moving_avg).mean()
 df['mvstd'] = df['Close'].rolling(moving_avg).std()
-df['upper_band'] = df['middle_band'] + (4*df['mvstd'])
+df['upper_band'] = df['middle_band'] + (2*df['mvstd'])
 df['lower_band'] = df['middle_band'] - (2*df['mvstd'])
-print(df['upper_band'].tail(), df['mvstd'].tail(), df['middle_band'].tail())
 combination = [ 1, 0 ]
 condition = [df['Close'] < df['lower_band'], df['Close'] > df['upper_band']]
 df['signal'] = np.select(condition, combination, default=np.nan)
