@@ -70,7 +70,6 @@ def backtest():
             best_sell_w = w
     return best_buy_w, best_sell_w,sample
 best_buy_w, best_sell_w, sample = backtest()
-print(best_buy_w, best_sell_w)
 condition = [df['mfi'] > best_sell_w, df['mfi'] < best_buy_w]
 combinations = [0 , 1]
 df['signal'] = np.select(condition, combinations, default = np.nan)
@@ -79,29 +78,31 @@ holdout = df.iloc[sample:]
 holdout_ret = holdout['dailyReturns'] * holdout['position']
 holdout_sharpe = holdout_ret.mean() / holdout_ret.std() * np.sqrt(252)
 holdout_bh_sharpe = holdout['dailyReturns'].mean() / holdout['dailyReturns'].std() * np.sqrt(252)
-print(f'Holdout Sharpe: {holdout_sharpe:.3f} vs buy&hold: {holdout_bh_sharpe:.3f}')
 df['strategy'] = dummy_value * np.cumprod(1 + df['dailyReturns'].fillna(0) * df['position'].fillna(0)) 
 df['buy_hold'] = dummy_value * np.cumprod(1 + df['dailyReturns'].fillna(0))
 pltdf = df[lookback:].copy()
 pltdf['strategy'] = pltdf['strategy'] / pltdf['strategy'].iloc[0] * dummy_value
 pltdf['buy_hold'] = pltdf['buy_hold'] / pltdf['buy_hold'].iloc[0] * dummy_value
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
-fig.set_facecolor("#95bcf3")
-ax1.set_facecolor("#ebe3fc")  
-ax2.set_facecolor("#ebe3fc")
-ax1.plot(pltdf['strategy'], label='MFI strategy')
-ax1.plot(pltdf['buy_hold'], label='Buy & hold', color = 'blue', alpha = 0.7)
-split_date = df.index[sample]
-if split_date >= pltdf.index[0]:
-    ax1.axvline(split_date, color='black', linestyle=':', label='train/holdout split')
-ax1.set_title(f'{ticker}: MFI vs buy & hold')
-ax1.set_ylabel('Portfolio value ($)')
-ax1.legend()
-ax2.plot(pltdf['mfi'], label='MFI', color = 'teal')
-ax2.axhline(best_buy_w, color='green', linestyle='--')
-ax2.axhline(best_sell_w, color='red', linestyle='--')
-ax2.set_ylabel('MFI')
-ax2.legend()
-plt.show()
+if __name__ == "__main__":
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+    fig.set_facecolor("#95bcf3")
+    ax1.set_facecolor("#ebe3fc")  
+    ax2.set_facecolor("#ebe3fc")
+    ax1.plot(pltdf['strategy'], label='MFI strategy')
+    ax1.plot(pltdf['buy_hold'], label='Buy & hold', color = 'blue', alpha = 0.7)
+    split_date = df.index[sample]
+    print(best_buy_w, best_sell_w)
+    print(f'Holdout Sharpe: {holdout_sharpe:.3f} vs buy&hold: {holdout_bh_sharpe:.3f}')
+    if split_date >= pltdf.index[0]:
+        ax1.axvline(split_date, color='black', linestyle=':', label='train/holdout split')
+    ax1.set_title(f'{ticker}: MFI vs buy & hold')
+    ax1.set_ylabel('Portfolio value ($)')
+    ax1.legend()
+    ax2.plot(pltdf['mfi'], label='MFI', color = 'teal')
+    ax2.axhline(best_buy_w, color='green', linestyle='--')
+    ax2.axhline(best_sell_w, color='red', linestyle='--')
+    ax2.set_ylabel('MFI')
+    ax2.legend()
+    plt.show()
 
 
