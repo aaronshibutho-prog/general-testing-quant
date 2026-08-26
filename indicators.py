@@ -3,7 +3,6 @@ import matplotlib.pylab as plt
 import yfinance as yf
 from datetime import date, timedelta
 import pandas as pd
-from sklearn.linear_model import LinearRegression
 #   Amalgamation of technical indicators to find the ideal signal combination
 #   Categories: trend (MACD, MA, UTBot) | momentum (RSI) | mean-reversion (BOLL)
 #               volume (MFI) | volatility (SM) | structure (SMC) | pivot (CPR)
@@ -40,7 +39,29 @@ from sklearn.linear_model import LinearRegression
 #   MA    + BOLL + MFI    -> trend + mean-reversion + volume
 #   UTBot + RSI + SM      -> trend + momentum + volatility
 #   MACD  + SMC + CPR     -> trend + structure + pivot
-tech_in = [ 'UTBOT' , 'MFI']
+TICKER = "NVDA"
+tech_in = ['MA', 'SMC']
+## You may allocate the weights 
+w_ma    = 1
+w_mfi   = 1
+w_rsi   = 1
+w_boll  = 1
+w_macd  = 1
+w_utbot = 1
+w_smc   = 1
+w_sm    = 1
+w_cpr   = 1
+total_weight = w_ma + w_mfi + w_rsi + w_boll + w_macd + w_utbot + w_smc + w_sm + w_cpr
+if total_weight > 0:
+    w_ma    /= total_weight
+    w_mfi   /= total_weight
+    w_rsi   /= total_weight
+    w_boll  /= total_weight
+    w_macd  /= total_weight
+    w_utbot /= total_weight
+    w_smc   /= total_weight
+    w_sm    /= total_weight
+    w_cpr   /= total_weight
 tech_in = [x.lower() for x in tech_in]
 Fast_moving = 20
 Slow_moving = 50
@@ -64,8 +85,6 @@ adx_threshold = 25
 # Normalize weighted indicator score to [-1, +1]; Can be changed based on risk appetite
 buy_indicatior = 0.15
 sell_indicator = -0.15
-TICKER = "META"
-start_date = '1900-01-01'
 dummy_value = 1000
 lookback = -1000
 interval = '1d'
@@ -77,7 +96,7 @@ interval_limits = {
 if interval in interval_limits:
     start_date = date.today() - timedelta(days=interval_limits[interval])
 else:
-    start_date = '1900-01-01'
+    start_date = date.today() - timedelta(days=365*2)
 df = yf.download(TICKER, start=start_date, end=date.today(), interval= interval)
 df.columns = df.columns.get_level_values(0)
 vals = pd.DataFrame()
@@ -197,7 +216,7 @@ def squeeeze_momentum():
     df['momentum'] = diff.rolling(mov).apply(linreg_endpoint, raw=True)
     squeeze_release = df['squeeze_on'].shift(1).fillna(False) & ~df['squeeze_on']
     condition = [squeeze_release & (df['momentum'] > 0), squeeze_release & (df['momentum'] < 0)]
-    combination = [1, 0]
+    combination = [1, -1]
     df['sm_signal'] = np.select(condition, combination, default=np.nan)
     df['sm_position'] = df['sm_signal'].ffill().fillna(0).shift(1)
 def cpr():
@@ -207,7 +226,7 @@ def cpr():
     df['pivot'] = (prev_close + prev_high + prev_low) / 3
     df['bc'] = (prev_high + prev_low) / 2
     df['tc'] = 2 * df['pivot'] - df['bc']
-    combination = [1 , 0]
+    combination = [1 , -1]
     condition = [df['Close'] > df['tc'] , df['Close'] < df['bc']]
     df['cpr_signal'] = np.select(condition, combination, default = np.nan)
     df['cpr_position'] = df['cpr_signal'].ffill().fillna(0).shift(1)
@@ -227,13 +246,6 @@ def adx():
     df['macd_position'] = df['macd_position'] * trend_allowed
     df['mov_position'] = df['mov_position'] * trend_allowed
     df['utbot_position'] = df['utbot_position'] * trend_allowed
-def reg_weights(data):
-    x = data[['mov_position', 'mfi_position', 'rsi_position', 'boll_position',
-              'macd_position', 'utbot_position', 'smc_position', 'sm_position', 'cpr_position']]
-    y = data['Close'].pct_change()
-    valid = x.join(y.rename('y')).dropna()
-    model = LinearRegression().fit(valid[x.columns], valid['y'])
-    return dict(zip(x.columns, model.coef_))
 for col in ['rsi_position', 'boll_position', 'macd_position', 'mfi_position', 'mov_position', 'utbot_position', 'smc_position', 'sm_position', 'cpr_position']:
     df[col] = 0
 for i in tech_in:
@@ -258,19 +270,6 @@ for i in tech_in:
 adx()
 sample = int(len(df) * 0.7)
 train_df, holdout_df = df.iloc[:sample], df.iloc[sample:]
-weights = reg_weights(train_df)
-weights= pd.Series(weights)
-norm_weights = weights / weights.abs().sum()
-## you may put manual weights
-w_ma   = norm_weights['mov_position']
-w_mfi  = norm_weights['mfi_position']
-w_rsi  = norm_weights['rsi_position']
-w_boll = norm_weights['boll_position']
-w_macd = norm_weights['macd_position']
-w_utbot = norm_weights['utbot_position']
-w_smc = norm_weights['smc_position']
-w_sm = norm_weights['sm_position']
-w_cpr = norm_weights['cpr_position']
 df['dailyReturns'] = df['Close'].pct_change()
 df['totalPosition'] = (
     df['rsi_position'] * w_rsi + df['boll_position'] * w_boll +
