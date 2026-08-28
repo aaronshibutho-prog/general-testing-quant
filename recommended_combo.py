@@ -5,7 +5,7 @@ import pandas as pd
 import os
 ticks = pd.read_excel('industry_ticks.xlsx')
 company_industry = ticks.dropna(subset=['Industry'])
-ticker = 'NVDA'
+ticker = 'nvda'
 ##You can add more indicators to check or make comparisons. Only works for US Stock for now
 combos = {
     'MACD': ['macd_position'], 'MA': ['mov_position'], 'UTBot': ['utbot_position'],
@@ -82,8 +82,8 @@ kc_mult = 1.5
 adx_period = 14 
 adx_threshold = 25
 dummy_value = 1000
-lookback = -1000
-interval = '1d'
+lookback = -100000
+interval = '5m'
 interval_limits = {
     '1m': 6,
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
@@ -92,7 +92,7 @@ interval_limits = {
 if interval in interval_limits:
     start_date = date.today() - timedelta(days=interval_limits[interval])
 else:
-    start_date = date.today() - timedelta(days=365*3)
+    start_date = date.today() - timedelta(days=365*2)
 df = pd.DataFrame()
 vals = pd.DataFrame()
 def moving_avg():
@@ -242,35 +242,32 @@ def adx():
     df['mov_position'] = df['mov_position'] * trend_allowed
     df['utbot_position'] = df['utbot_position'] * trend_allowed
 combo_scores = {name: [] for name in combos}
+per_stock_best = {}
 for symbol in peers:
     try:
         df = yf.download(symbol, start=start_date, end=date.today(), interval=interval, multi_level_index=False)
         vals = pd.DataFrame()
-        rsi()
-        bollinger_band()
-        MACD()
-        mfi()
-        moving_avg()
-        UTBot()
-        smc()
-        squeeeze_momentum()
-        cpr()
-        adx()
+        rsi(); bollinger_band(); MACD(); mfi(); moving_avg(); UTBot(); smc(); squeeeze_momentum(); cpr(); adx()
         df['dailyReturns'] = df['Close'].pct_change()
-        sample = int(len(df) * 0.7)
-        holdout = df.iloc[sample:]
+        holdout = df.iloc[:]
+        stock_scores = {}
         for name, cols in combos.items():
-            combined_position = np.sign(holdout[cols].sum(axis=1))  # normalize to -1/0/1
+            combined_position = np.sign(holdout[cols].sum(axis=1))
             strategy_return = combined_position * holdout['dailyReturns']
-            if strategy_return.std() > 0:
-                sharpe = strategy_return.mean() / strategy_return.std() * np.sqrt(252)
-                combo_scores[name].append(sharpe)
+            total_return = (1 + strategy_return.fillna(0)).prod() - 1   # per-stock compounded return
+            combo_scores[name].append(total_return)
+            stock_scores[name] = total_return
+        best_name = max(stock_scores, key=stock_scores.get)
+        per_stock_best[symbol] = (best_name, stock_scores[best_name])
     except Exception:
         continue
 avg_scores = {name: np.mean(scores) for name, scores in combo_scores.items() if len(scores) > 0}
 ranked = sorted(avg_scores.items(), key=lambda x: x[1], reverse=True)
-print(f"\nTop 3 combos for {ticker} ({industry}, {stock_cap}), based on {len(peers)} peers:")
+print("\nBest combo per stock:")
+for sym, (name, ret) in per_stock_best.items():
+    print(f"{sym}: {name} ({ret:.2%})")
+print(f"\nTop 3 combos overall for {ticker} ({industry}, {stock_cap}), based on {len(peers)} peers:")
 for name, score in ranked[:3]:
-    print(f"{name}: {score:.4f}")
+    print(f"{name}: {score:.2%}")
 print('Its peers are:')
-print(peers)
+print(peers)     

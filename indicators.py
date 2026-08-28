@@ -39,8 +39,8 @@ import pandas as pd
 #   MA    + BOLL + MFI    -> trend + mean-reversion + volume
 #   UTBot + RSI + SM      -> trend + momentum + volatility
 #   MACD  + SMC + CPR     -> trend + structure + pivot
-TICKER = "NVDA"
-tech_in = ['MA', 'SMC']
+TICKER = "AMD"
+tech_in = ['UTBot','MFI']
 ## You may allocate the weights 
 w_ma    = 1
 w_mfi   = 1
@@ -86,8 +86,8 @@ adx_threshold = 25
 buy_indicatior = 0.15
 sell_indicator = -0.15
 dummy_value = 1000
-lookback = -1000
-interval = '1d'
+lookback = -10000
+interval = '5m'
 interval_limits = {
     '1m': 6,
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
