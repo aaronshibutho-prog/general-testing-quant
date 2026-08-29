@@ -39,8 +39,8 @@ import pandas as pd
 #   MA    + BOLL + MFI    -> trend + mean-reversion + volume
 #   UTBot + RSI + SM      -> trend + momentum + volatility
 #   MACD  + SMC + CPR     -> trend + structure + pivot
-TICKER = "AMD"
-tech_in = ['UTBot','MFI']
+TICKER = "AAPL"
+tech_in = ['MFI']
 ## You may allocate the weights 
 w_ma    = 1
 w_mfi   = 1
@@ -51,18 +51,20 @@ w_utbot = 1
 w_smc   = 1
 w_sm    = 1
 w_cpr   = 1
-total_weight = w_ma + w_mfi + w_rsi + w_boll + w_macd + w_utbot + w_smc + w_sm + w_cpr
-if total_weight > 0:
-    w_ma    /= total_weight
-    w_mfi   /= total_weight
-    w_rsi   /= total_weight
-    w_boll  /= total_weight
-    w_macd  /= total_weight
-    w_utbot /= total_weight
-    w_smc   /= total_weight
-    w_sm    /= total_weight
-    w_cpr   /= total_weight
 tech_in = [x.lower() for x in tech_in]
+weights = {'ma': w_ma, 'mfi': w_mfi, 'rsi': w_rsi, 'boll': w_boll, 'macd': w_macd,
+           'utbot': w_utbot, 'smc': w_smc, 'sm': w_sm, 'cpr': w_cpr}
+total_weight = sum(weights[k] for k in tech_in)
+if total_weight > 0:
+    w_ma    = weights['ma']    / total_weight if 'ma'    in tech_in else 0
+    w_mfi   = weights['mfi']   / total_weight if 'mfi'   in tech_in else 0
+    w_rsi   = weights['rsi']   / total_weight if 'rsi'   in tech_in else 0
+    w_boll  = weights['boll']  / total_weight if 'boll'  in tech_in else 0
+    w_macd  = weights['macd']  / total_weight if 'macd'  in tech_in else 0
+    w_utbot = weights['utbot'] / total_weight if 'utbot' in tech_in else 0
+    w_smc   = weights['smc']   / total_weight if 'smc'   in tech_in else 0
+    w_sm    = weights['sm']    / total_weight if 'sm'    in tech_in else 0
+    w_cpr   = weights['cpr']   / total_weight if 'cpr'   in tech_in else 0
 Fast_moving = 20
 Slow_moving = 50
 mfi_period = 14
@@ -87,7 +89,9 @@ buy_indicatior = 0.15
 sell_indicator = -0.15
 dummy_value = 1000
 lookback = -10000
-interval = '5m'
+long = 1
+short = 0
+interval = '1d'
 interval_limits = {
     '1m': 6,
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
@@ -96,14 +100,14 @@ interval_limits = {
 if interval in interval_limits:
     start_date = date.today() - timedelta(days=interval_limits[interval])
 else:
-    start_date = date.today() - timedelta(days=365*2)
+    start_date = date.today() - timedelta(days=365*3)
 df = yf.download(TICKER, start=start_date, end=date.today(), interval= interval)
 df.columns = df.columns.get_level_values(0)
 vals = pd.DataFrame()
 def moving_avg():
     vals['MA50'] = df['Close'].rolling(Slow_moving).mean()
     vals['MA20'] = df['Close'].rolling(Fast_moving).mean()
-    df['mov_position'] = np.where(vals['MA20'] > vals['MA50'], 1, -1)
+    df['mov_position'] = np.where(vals['MA20'] > vals['MA50'], long, short)
     df['mov_position'] = np.where(vals['MA50'].isna(), 0, df['mov_position'])
     df['mov_position'] = df['mov_position'].shift(1)
 def mfi():
@@ -115,7 +119,7 @@ def mfi():
     vals['mfr'] = vals['mfi_posMf'].rolling(mfi_period).sum() / vals['mfi_negMf'].rolling(mfi_period).sum()
     vals['mfi'] = 100 - 100 / (1 + vals['mfr'])
     condition = [vals['mfi'] > mfi_sell, vals['mfi'] < mfi_buy]
-    combinations = [-1 , 1]
+    combinations = [short , long]
     vals['mfi_signal'] = np.select(condition, combinations, default = np.nan)
     df['mfi_position'] = vals['mfi_signal'].ffill().fillna(0).shift(1)
 def rsi():
@@ -129,7 +133,7 @@ def rsi():
     vals['rsi'] = 100 - 100/(1+vals['rs'])
     vals['rsi'] = vals['rsi'].where(~flat, np.where(vals['rsi_avgGain'] == 0, 50.0, 100.0))
     condition = [vals['rsi'] < rsi_buy, vals['rsi'] > rsi_sell]
-    choice = [1, -1]
+    choice = [long, short]
     vals['rsi_signal'] = np.select(condition, choice, default=np.nan)
     df['rsi_position'] = vals['rsi_signal'].ffill().fillna(0).shift(1)
 def bollinger_band():
@@ -137,7 +141,7 @@ def bollinger_band():
     vals['mvstd'] = df['Close'].rolling(boll_map).std()
     vals['upper_band'] = vals['middle_band'] + (2*vals['mvstd'])
     vals['lower_band'] = vals['middle_band'] - (2*vals['mvstd'])
-    combination = [ 1, -1 ]
+    combination = [ long, short]
     condition = [df['Close'] < vals['lower_band'], df['Close'] > vals['upper_band']]
     vals['boll_signal'] = np.select(condition, combination, default=np.nan)
     df['boll_position'] = vals['boll_signal'].ffill(). fillna(0). shift(1)
@@ -146,7 +150,7 @@ def MACD():
     vals['SEMA'] = df['Close'].ewm(span=sema, adjust=False).mean()
     vals['MACD'] = vals['FEMA'] - vals['SEMA']
     vals['BEMA'] = vals['MACD'].ewm(span=bema, adjust=False).mean()
-    df['macd_position'] = np.where(vals['MACD'] > vals['BEMA'], 1, -1)
+    df['macd_position'] = np.where(vals['MACD'] > vals['BEMA'], long, short)
     df['macd_position'] = df['macd_position'].shift(1)
 def UTBot():
     df['Prev_Close'] = df['Close']. shift(1)
@@ -172,7 +176,7 @@ def UTBot():
         else:
             stop.iloc[i] = close + nl
     df['stop'] = stop
-    combination = [1 , -1]
+    combination = [long , short]
     condition = [df['Close'] > df['stop'] , df['Close'] < df['stop']]
     df['utbot_signal'] = np.select(condition, combination, default = np.nan)
     df['utbot_position'] = df['utbot_signal'].ffill().fillna(0).shift(1)
@@ -185,7 +189,7 @@ def smc():
     df['swing_low'] = df['swing_low'].shift(w)
     last_swing_high = df['swing_high'].ffill()
     last_swing_low = df['swing_low'].ffill()
-    combination = [1, -1]
+    combination = [long, short]
     condition = [df['Close'] > last_swing_high.shift(1), df['Close'] < last_swing_low.shift(1)]
     df['smc_signal'] = np.select(condition, combination, default=np.nan)
     df['smc_position'] = df['smc_signal'].ffill(). fillna(0).shift(1)
@@ -216,7 +220,7 @@ def squeeeze_momentum():
     df['momentum'] = diff.rolling(mov).apply(linreg_endpoint, raw=True)
     squeeze_release = df['squeeze_on'].shift(1).fillna(False) & ~df['squeeze_on']
     condition = [squeeze_release & (df['momentum'] > 0), squeeze_release & (df['momentum'] < 0)]
-    combination = [1, -1]
+    combination = [long, short]
     df['sm_signal'] = np.select(condition, combination, default=np.nan)
     df['sm_position'] = df['sm_signal'].ffill().fillna(0).shift(1)
 def cpr():
@@ -226,7 +230,7 @@ def cpr():
     df['pivot'] = (prev_close + prev_high + prev_low) / 3
     df['bc'] = (prev_high + prev_low) / 2
     df['tc'] = 2 * df['pivot'] - df['bc']
-    combination = [1 , -1]
+    combination = [long , short]
     condition = [df['Close'] > df['tc'] , df['Close'] < df['bc']]
     df['cpr_signal'] = np.select(condition, combination, default = np.nan)
     df['cpr_position'] = df['cpr_signal'].ffill().fillna(0).shift(1)
@@ -268,8 +272,8 @@ for i in tech_in:
     if 'cpr' == i:
         cpr()
 adx()
-sample = int(len(df) * 0.7)
-train_df, holdout_df = df.iloc[:sample], df.iloc[sample:]
+
+holdout_df = df.iloc[:]
 df['dailyReturns'] = df['Close'].pct_change()
 df['totalPosition'] = (
     df['rsi_position'] * w_rsi + df['boll_position'] * w_boll +
@@ -279,7 +283,7 @@ df['totalPosition'] = (
     df['cpr_position'] * w_cpr
 )
 df['signal'] = np.select([df['totalPosition'] > buy_indicatior, df['totalPosition'] < sell_indicator], [1, -1])
-holdout_df = df.iloc[sample:].copy()
+holdout_df = df.iloc[:].copy()
 holdout_df['strategy'] = dummy_value * np.cumprod(1 + holdout_df['dailyReturns'].fillna(0) * holdout_df['signal'].fillna(0))
 holdout_df['buy_hold'] = dummy_value * np.cumprod(1 + holdout_df['dailyReturns'].fillna(0))
 pdf = holdout_df[lookback:].copy()

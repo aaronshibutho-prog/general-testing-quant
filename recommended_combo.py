@@ -5,8 +5,7 @@ import pandas as pd
 import os
 ticks = pd.read_excel('industry_ticks.xlsx')
 company_industry = ticks.dropna(subset=['Industry'])
-ticker = 'nvda'
-##You can add more indicators to check or make comparisons. Only works for US Stock for now
+ticker = 'AAPL'
 combos = {
     'MACD': ['macd_position'], 'MA': ['mov_position'], 'UTBot': ['utbot_position'],
     'RSI': ['rsi_position'], 'BOLL': ['boll_position'], 'MFI': ['mfi_position'],
@@ -81,9 +80,9 @@ mov = 20
 kc_mult = 1.5
 adx_period = 14 
 adx_threshold = 25
-dummy_value = 1000
-lookback = -100000
-interval = '5m'
+long = 1
+short = -1
+interval = '1d'
 interval_limits = {
     '1m': 6,
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
@@ -92,13 +91,11 @@ interval_limits = {
 if interval in interval_limits:
     start_date = date.today() - timedelta(days=interval_limits[interval])
 else:
-    start_date = date.today() - timedelta(days=365*2)
-df = pd.DataFrame()
-vals = pd.DataFrame()
+    start_date = date.today() - timedelta(days=365*5)
 def moving_avg():
     vals['MA50'] = df['Close'].rolling(Slow_moving).mean()
     vals['MA20'] = df['Close'].rolling(Fast_moving).mean()
-    df['mov_position'] = np.where(vals['MA20'] > vals['MA50'], 1, -1)
+    df['mov_position'] = np.where(vals['MA20'] > vals['MA50'], long, short)
     df['mov_position'] = np.where(vals['MA50'].isna(), 0, df['mov_position'])
     df['mov_position'] = df['mov_position'].shift(1)
 def mfi():
@@ -110,7 +107,7 @@ def mfi():
     vals['mfr'] = vals['mfi_posMf'].rolling(mfi_period).sum() / vals['mfi_negMf'].rolling(mfi_period).sum()
     vals['mfi'] = 100 - 100 / (1 + vals['mfr'])
     condition = [vals['mfi'] > mfi_sell, vals['mfi'] < mfi_buy]
-    combinations = [ -1 , 1]
+    combinations = [ short , long]
     vals['mfi_signal'] = np.select(condition, combinations, default = np.nan)
     df['mfi_position'] = vals['mfi_signal'].ffill().fillna(0).shift(1)
 def rsi():
@@ -124,7 +121,7 @@ def rsi():
     vals['rsi'] = 100 - 100/(1+vals['rs'])
     vals['rsi'] = vals['rsi'].where(~flat, np.where(vals['rsi_avgGain'] == 0, 50.0, 100.0))
     condition = [vals['rsi'] < rsi_buy, vals['rsi'] > rsi_sell]
-    choice = [1, -1]
+    choice = [long, short]
     vals['rsi_signal'] = np.select(condition, choice, default=np.nan)
     df['rsi_position'] = vals['rsi_signal'].ffill().fillna(0).shift(1)
 def bollinger_band():
@@ -132,7 +129,7 @@ def bollinger_band():
     vals['mvstd'] = df['Close'].rolling(boll_map).std()
     vals['upper_band'] = vals['middle_band'] + (2*vals['mvstd'])
     vals['lower_band'] = vals['middle_band'] - (2*vals['mvstd'])
-    combination = [ 1, -1 ]
+    combination = [ long, short ]
     condition = [df['Close'] < vals['lower_band'], df['Close'] > vals['upper_band']]
     vals['boll_signal'] = np.select(condition, combination, default=np.nan)
     df['boll_position'] = vals['boll_signal'].ffill(). fillna(0). shift(1)
@@ -141,7 +138,7 @@ def MACD():
     vals['SEMA'] = df['Close'].ewm(span=sema, adjust=False).mean()
     vals['MACD'] = vals['FEMA'] - vals['SEMA']
     vals['BEMA'] = vals['MACD'].ewm(span=bema, adjust=False).mean()
-    df['macd_position'] = np.where(vals['MACD'] > vals['BEMA'], 1, -1)
+    df['macd_position'] = np.where(vals['MACD'] > vals['BEMA'], long, short)
     df['macd_position'] = df['macd_position'].shift(1)
 def UTBot():
     df['Prev_Close'] = df['Close']. shift(1)
@@ -167,7 +164,7 @@ def UTBot():
         else:
             stop.iloc[i] = close + nl
     df['stop'] = stop
-    combination = [1 , -1]
+    combination = [long , short]
     condition = [df['Close'] > df['stop'] , df['Close'] < df['stop']]
     df['utbot_signal'] = np.select(condition, combination, default = np.nan)
     df['utbot_position'] = df['utbot_signal'].ffill().fillna(0).shift(1)
@@ -180,7 +177,7 @@ def smc():
     df['swing_low'] = df['swing_low'].shift(w)
     last_swing_high = df['swing_high'].ffill()
     last_swing_low = df['swing_low'].ffill()
-    combination = [1, -1]
+    combination = [long, short]
     condition = [df['Close'] > last_swing_high.shift(1), df['Close'] < last_swing_low.shift(1)]
     df['smc_signal'] = np.select(condition, combination, default=np.nan)
     df['smc_position'] = df['smc_signal'].ffill(). fillna(0).shift(1)
@@ -211,7 +208,7 @@ def squeeeze_momentum():
     df['momentum'] = diff.rolling(mov).apply(linreg_endpoint, raw=True)
     squeeze_release = df['squeeze_on'].shift(1).fillna(False) & ~df['squeeze_on']
     condition = [squeeze_release & (df['momentum'] > 0), squeeze_release & (df['momentum'] < 0)]
-    combination = [1, -1]
+    combination = [long, short]
     df['sm_signal'] = np.select(condition, combination, default=np.nan)
     df['sm_position'] = df['sm_signal'].ffill().fillna(0).shift(1)
 def cpr():
@@ -221,11 +218,12 @@ def cpr():
     df['pivot'] = (prev_close + prev_high + prev_low) / 3
     df['bc'] = (prev_high + prev_low) / 2
     df['tc'] = 2 * df['pivot'] - df['bc']
-    combination = [1 , -1]
+    combination = [long , short]
     condition = [df['Close'] > df['tc'] , df['Close'] < df['bc']]
     df['cpr_signal'] = np.select(condition, combination, default = np.nan)
     df['cpr_position'] = df['cpr_signal'].ffill().fillna(0).shift(1)
 def adx():
+
     prev_close = df['Close'].shift(1)
     plus_dm = (df['High'] - df['High'].shift(1)).clip(lower=0)
     minus_dm = (df['Low'].shift(1) - df['Low']).clip(lower=0)
@@ -241,33 +239,49 @@ def adx():
     df['macd_position'] = df['macd_position'] * trend_allowed
     df['mov_position'] = df['mov_position'] * trend_allowed
     df['utbot_position'] = df['utbot_position'] * trend_allowed
-combo_scores = {name: [] for name in combos}
-per_stock_best = {}
+peer_gain =  {}
 for symbol in peers:
-    try:
-        df = yf.download(symbol, start=start_date, end=date.today(), interval=interval, multi_level_index=False)
-        vals = pd.DataFrame()
-        rsi(); bollinger_band(); MACD(); mfi(); moving_avg(); UTBot(); smc(); squeeeze_momentum(); cpr(); adx()
-        df['dailyReturns'] = df['Close'].pct_change()
-        holdout = df.iloc[:]
-        stock_scores = {}
-        for name, cols in combos.items():
-            combined_position = np.sign(holdout[cols].sum(axis=1))
-            strategy_return = combined_position * holdout['dailyReturns']
-            total_return = (1 + strategy_return.fillna(0)).prod() - 1   # per-stock compounded return
-            combo_scores[name].append(total_return)
-            stock_scores[name] = total_return
-        best_name = max(stock_scores, key=stock_scores.get)
-        per_stock_best[symbol] = (best_name, stock_scores[best_name])
-    except Exception:
-        continue
-avg_scores = {name: np.mean(scores) for name, scores in combo_scores.items() if len(scores) > 0}
-ranked = sorted(avg_scores.items(), key=lambda x: x[1], reverse=True)
-print("\nBest combo per stock:")
-for sym, (name, ret) in per_stock_best.items():
-    print(f"{sym}: {name} ({ret:.2%})")
-print(f"\nTop 3 combos overall for {ticker} ({industry}, {stock_cap}), based on {len(peers)} peers:")
-for name, score in ranked[:3]:
-    print(f"{name}: {score:.2%}")
-print('Its peers are:')
-print(peers)     
+    peer = yf.download(symbol, start = start_date, end = date.today(), interval=interval, multi_level_index= False)
+    peer_gain[symbol] = {}
+    for ind, pos in combos.items():
+        df = peer.copy()
+        for col in ['rsi_position', 'boll_position', 'macd_position', 'mfi_position', 'mov_position', 'utbot_position', 'smc_position', 'sm_position', 'cpr_position']:
+            df[col] = np.nan
+        vals =  pd.DataFrame()
+        pos_len = len(pos)
+        for mov_i in range(pos_len):
+            if pos[mov_i].startswith('mov_'):
+                moving_avg()
+            if pos[mov_i].startswith('macd_'):
+                MACD()
+            if pos[mov_i].startswith('boll_'):
+                bollinger_band()
+            if pos[mov_i].startswith('mfi_'):
+                mfi()
+            if pos[mov_i].startswith('rsi_'):
+                rsi()
+            if pos[mov_i].startswith('smc_'):
+                smc()
+            if pos[mov_i].startswith('sm_'):
+                squeeeze_momentum()
+            if pos[mov_i].startswith('cpr_'):
+                cpr()
+            if pos[mov_i].startswith('utbot_'):
+                UTBot()
+        adx()
+        row_min = df[pos].min(axis=1)
+        row_max = df[pos].max(axis=1)
+        df['combined'] = np.where((row_min == row_max) & (row_min == 1), long, np.where((row_min == row_max) & (row_min == -1), short, 0))
+        df['daily_return'] = df['Close'].pct_change()
+        total_return =  np.cumprod( 1 + df['daily_return'].fillna(0) * df['combined'])
+        peer_gain[symbol][ind] = total_return.iloc[-1] - 1 
+results = pd.DataFrame(peer_gain)
+print("\n=== TOP 3 PER-PEER (%) ===")
+for sym in results.columns:
+    print(f"{sym}:")
+    for combo, ret in results[sym].nlargest(3).items():
+        print(f"   {combo:<12} {ret*100:7.2f}%")
+total_gain = results.median(axis=1).sort_values(ascending=False)
+print("\n=== TOP 3 RECOMMENDATIONS ===")
+for i, (combo, ret) in enumerate(total_gain.head(3).items(), 1):
+    print(f"{i}. {combo:<12} med {ret*100:6.2f}%  avg {results.loc[combo].mean()*100:6.2f}")

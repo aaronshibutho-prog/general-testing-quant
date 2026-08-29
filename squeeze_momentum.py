@@ -6,7 +6,6 @@ dummy_value = 1000
 lookback = -1000
 mov = 20
 kc_mult = 1.5
-start_date = '1900-01-01'
 ticker = 'AAPL'
 interval = '1h'
 interval_limits = {
@@ -17,7 +16,7 @@ interval_limits = {
 if interval in interval_limits:
     start_date = date.today() - timedelta(days=interval_limits[interval])
 else:
-    start_date = '1900-01-01'
+    start_date = date.today() - timedelta(days=365*5)
 df = yf.download(ticker, start = start_date, end = date.today(), interval= interval, multi_level_index= False)
 sma = df['Close'].rolling(mov).mean()
 width = 2 * df['Close'].rolling(mov).std()

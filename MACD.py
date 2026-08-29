@@ -8,7 +8,6 @@ lookback = -1000
 fema = 12
 sema = 26
 bema = 9
-start_date = '1900-01-01'
 interval = '1h'
 interval_limits = {
     '1m': 6,
@@ -18,7 +17,7 @@ interval_limits = {
 if interval in interval_limits:
     start_date = date.today() - timedelta(days=interval_limits[interval])
 else:
-    start_date = '1900-01-01'
+    start_date = date.today() - timedelta(days=365*5)
 df = yf.download(ticker, start=start_date, end=date.today(), interval= interval)
 df.columns = df.columns.get_level_values(0)
 df['FEMA'] = df['Close'].ewm(span=fema, adjust=False).mean()

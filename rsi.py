@@ -4,7 +4,6 @@ import yfinance as yf
 import pandas as pd
 from datetime import date,timedelta
 vals =  pd.DataFrame()
-start_date = '2015-01-01'
 dummy_value =  1000
 rsi_period = 14
 buy = 50
@@ -20,7 +19,7 @@ interval_limits = {
 if interval in interval_limits:
     start_date = date.today() - timedelta(days=interval_limits[interval])
 else:
-    start_date = '2015-01-01'
+    start_date = date.today() - timedelta(days=365*5)
 df = yf.download(ticker, start = start_date, end =  date.today(), interval= interval, multi_level_index = False)
 df.columns = df.columns.get_level_values(0)
 vals['diff'] =  df['Close'].diff()

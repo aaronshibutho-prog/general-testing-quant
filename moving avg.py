@@ -7,7 +7,6 @@ TICKER = "AAPL"
 #The program will go through all the possible combinations to find the best performance one as the default
 Fast_moving = 50
 Slow_moving = 100
-start_date = '1900-01-01'
 dummy_value = 1000
 lookback = -10000
 interval = '1d'
@@ -19,7 +18,7 @@ interval_limits = {
 if interval in interval_limits:
     start_date = date.today() - timedelta(days=interval_limits[interval])
 else:
-    start_date = '2000-01-01'
+    start_date = date.today() - timedelta(days=365*5)
 
 def backtest():
     data = yf.download (TICKER, start= start_date, end= date.today(), interval= '1d', multi_level_index=False) 

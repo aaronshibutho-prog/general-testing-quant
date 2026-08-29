@@ -5,7 +5,6 @@ from datetime import date, timedelta
 dummy_value = 1000
 lookback = -1000
 w = 5
-start_date = '1900-01-01'
 ticker = 'META'
 interval = '1d'
 interval_limits = {
@@ -16,7 +15,7 @@ interval_limits = {
 if interval in interval_limits:
     start_date = date.today() - timedelta(days=interval_limits[interval])
 else:
-    start_date = '1900-01-01'
+    start_date = date.today() - timedelta(days=365*5)
 df = yf.download(ticker, start = start_date, end = date.today(), interval= interval, multi_level_index= False)
 is_swing_high = df['High'] == df['High'].rolling(2*w+1, center = True).max()
 is_swing_low = df['Low'] == df['Low'].rolling(2*w+1, center = True).min()
