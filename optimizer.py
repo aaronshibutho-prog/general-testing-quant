@@ -8,8 +8,8 @@ tech_in = ['MFI','MA', 'RSI', 'MACD', 'BOLL', 'SMC', 'SM', 'UTBOT'] ## the indic
 Fast_moving = [5, 10, 15, 20, 25, 30]
 Slow_moving = [50, 100, 150, 200]
 mfi_period = [10, 14, 18, 22]
-mfi_buy = [70, 75, 80, 85, 90]
-mfi_sell = [10, 15, 20, 25, 30]
+mfi_buy = [10, 15, 20, 25, 30]
+mfi_sell = [70, 75, 80, 85, 90]
 boll_map = [10, 15, 20, 25, 30]
 boll_stdmulti = [1.5, 2.0, 2.5, 3.0]
 rsi_period = [10, 14, 18, 22]
@@ -55,7 +55,7 @@ def mfi_backtest():
             for sell in mfi_sell:
                 vals['mfr'] = vals['posMf'].rolling(period).sum() / vals['negMf'].rolling(period).sum()                
                 df['mfi'] = 100 - 100 / (1 + vals['mfr'])
-                condition = [df['mfi'] < sell, df['mfi'] > buy]
+                condition = [df['mfi'] < buy, df['mfi'] > sell]
                 combinations = [long, short]
                 df['mfi_signal'] = np.select(condition, combinations, default=np.nan)
                 df['mfi_position'] = df['mfi_signal'].ffill().fillna(0).shift(1)
@@ -242,6 +242,7 @@ def utbot_backtesting():
                 oput_period = atr
                 maxed_ret = df['ut_strategy'].iloc[-1]
     return oput_period, oput_key
+print(f'=== {TICKER} — Optimal Indicator Combinations ===')
 for indicator in tech_in:
     if indicator == 'MFI':
         print('MFI optimal (period, buy, sell):', mfi_backtest())

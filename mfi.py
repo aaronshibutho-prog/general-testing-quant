@@ -6,8 +6,8 @@ from datetime import date,timedelta
 vals =  pd.DataFrame()
 dummy_value =  1000
 mfi_period = 14
-buy = 80
-sell = 20
+buy = 20
+sell = 80
 ticker = 'meta'
 lookback = -1000
 interval = '1h'
@@ -29,7 +29,7 @@ vals['negMf'] = np.where(vals['tpDiff'] < 0, vals['rmf'], 0)
 vals['mfr'] = vals['posMf'].rolling(mfi_period).sum() / vals['negMf'].rolling(mfi_period).sum()
 df['mfi'] = 100 - 100 / (1 + vals['mfr'])
 df['dailyReturns'] = df['Close'].pct_change()
-condition = [df['mfi'] < sell, df['mfi'] > buy]
+condition = [df['mfi'] < buy, df['mfi'] > sell]
 combinations = [1, -1]
 df['signal'] = np.select(condition, combinations, default=np.nan)
 df['position'] = df['signal'].ffill().fillna(0).shift(1)

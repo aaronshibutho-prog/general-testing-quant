@@ -39,8 +39,8 @@ import pandas as pd
 #   MA    + BOLL + MFI    -> trend + mean-reversion + volume
 #   UTBot + RSI + SM      -> trend + momentum + volatility
 #   MACD  + SMC + CPR     -> trend + structure + pivot
-TICKER = "META" ## ticker here
-tech_in = ['MFI'] ## the indicators here
+TICKER = "GOOGL" ## ticker here
+tech_in = ['MFI', 'SM'] ## the indicators here
 ## You may allocate the weights 
 w_ma    = 1
 w_mfi   = 1
@@ -68,29 +68,30 @@ if total_weight > 0:
 Fast_moving = 20
 Slow_moving = 50
 mfi_period = 14
-mfi_buy = 20
-mfi_sell = 80
-boll_map = 20
-rsi_period = 14
+mfi_buy = 30
+mfi_sell = 90
+boll_map = 10
+boll_stdmulti = 1.5
+rsi_period = 10
 rsi_buy = 30
-rsi_sell = 70
+rsi_sell = 75
 fema = 12
 sema = 26
 bema = 9
 atr_period = 10
 key_value = 1.0
 w = 5
-mov = 20
-kc_mult = 1.5
+mov = 15
+kc_mult = 1.0
 adx_period = 14 
 adx_threshold = 25
 # Normalize weighted indicator score to [-1, +1]; Can be changed based on risk appetite
 buy_indicatior = 0.15
 sell_indicator = -0.15
 dummy_value = 1000
-lookback = -300
+lookback = -10000
 long = 1
-short = -1
+short = 0
 interval = '1h' ##interval here
 interval_limits = {
     '1m': 6,
@@ -100,7 +101,7 @@ interval_limits = {
 if interval in interval_limits:
     start_date = date.today() - timedelta(days=interval_limits[interval])
 else:
-    start_date = date.today() - timedelta(days=365*5) ## change the year here
+    start_date = date.today() - timedelta(days=365*2) ## change the year here
 df = yf.download(TICKER, start=start_date, end=date.today(), interval= interval)
 df.columns = df.columns.get_level_values(0)
 vals = pd.DataFrame()
@@ -139,8 +140,8 @@ def rsi():
 def bollinger_band():
     vals['middle_band'] = df['Close'].rolling(boll_map).mean()
     vals['mvstd'] = df['Close'].rolling(boll_map).std()
-    vals['upper_band'] = vals['middle_band'] + (2*vals['mvstd'])
-    vals['lower_band'] = vals['middle_band'] - (2*vals['mvstd'])
+    vals['upper_band'] = vals['middle_band'] + (boll_stdmulti*vals['mvstd'])
+    vals['lower_band'] = vals['middle_band'] - (boll_stdmulti*vals['mvstd'])
     combination = [ long, short]
     condition = [df['Close'] < vals['lower_band'], df['Close'] > vals['upper_band']]
     vals['boll_signal'] = np.select(condition, combination, default=np.nan)
@@ -289,6 +290,8 @@ holdout_df['buy_hold'] = dummy_value * np.cumprod(1 + holdout_df['dailyReturns']
 pdf = holdout_df[lookback:].copy()
 pdf['strategy'] =  pdf['strategy'] / pdf['strategy'].iloc[0] * dummy_value
 pdf['buy_hold'] =  pdf['buy_hold'] / pdf['buy_hold'].iloc[0] * dummy_value
+print('Strategy final value:', pdf['strategy'].iloc[-1])
+print('Buy & hold final value:', pdf['buy_hold'].iloc[-1])
 plt.style.use('dark_background')
 plt.plot(pdf['strategy'], label='Strategy')
 plt.plot(pdf['buy_hold'], label='Buy & Hold')
