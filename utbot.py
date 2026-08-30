@@ -52,6 +52,8 @@ df['buy_hold'] = dummy_value * np.cumprod( 1 + df['daily_change'].fillna(0))
 pltdf = df[lookback:].copy()
 pltdf['strategy'] = pltdf['strategy'] / pltdf['strategy'].iloc[0] * dummy_value
 pltdf['buy_hold'] = pltdf['buy_hold'] / pltdf['buy_hold'].iloc[0] * dummy_value
+print('Strategy final value:', pltdf['strategy'].iloc[-1])
+print('Buy & hold final value:', pltdf['buy_hold'].iloc[-1])
 fig, (ax1, ax2) = plt.subplots( 2,1 , figsize = (12,8) , sharex = True)
 fig.set_facecolor("#95bcf3")
 ax1.set_facecolor("#ebe3fc")  

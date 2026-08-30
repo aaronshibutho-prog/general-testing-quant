@@ -53,10 +53,8 @@ df['buy_hold'] = dummy_value * np.cumprod(1 + df['dailyReturn'].fillna(0))
 pltdf = df[lookback: ].copy()
 pltdf['strategy'] = pltdf['strategy'] / pltdf['strategy'].iloc[0] * dummy_value
 pltdf['buy_hold'] = pltdf['buy_hold'] / pltdf['buy_hold'].iloc[0] * dummy_value
-print(df['strategy'].iloc[-1], df['buy_hold'].iloc[-1])
-strat_ret = df['dailyReturn'] * df['position']
-print('Strategy Sharpe:', strat_ret.mean()/strat_ret.std()*np.sqrt(252))
-print('Buy&Hold Sharpe:', df['dailyReturn'].mean()/df['dailyReturn'].std()*np.sqrt(252))
+print('Strategy final value:', pltdf['strategy'].iloc[-1])
+print('Buy & hold final value:', pltdf['buy_hold'].iloc[-1])
 fig, (ax1, ax2, ax3) = plt.subplots(3,1, figsize = (12,8), sharex = True)
 fig.set_facecolor("#95bcf3")
 ax1.set_facecolor("#ebe3fc")  
@@ -75,4 +73,3 @@ ax3.legend(['Momentum'])
 ax1.legend()
 ax2.legend()
 plt.show()
-
