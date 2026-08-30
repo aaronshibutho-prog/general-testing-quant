@@ -5,7 +5,7 @@ import pandas as pd
 import os
 ticks = pd.read_excel('industry_ticks.xlsx')
 company_industry = ticks.dropna(subset=['Industry'])
-ticker = 'MSFT' ##ticker here
+ticker = 'META' ##ticker here
 combos = {
     'MACD': ['macd_position'], 'MA': ['mov_position'], 'UTBot': ['utbot_position'],
     'RSI': ['rsi_position'], 'BOLL': ['boll_position'], 'MFI': ['mfi_position'],
