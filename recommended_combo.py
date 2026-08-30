@@ -5,7 +5,7 @@ import pandas as pd
 import os
 ticks = pd.read_excel('industry_ticks.xlsx')
 company_industry = ticks.dropna(subset=['Industry'])
-ticker = 'AAPL'
+ticker = 'MSFT' ##ticker here
 combos = {
     'MACD': ['macd_position'], 'MA': ['mov_position'], 'UTBot': ['utbot_position'],
     'RSI': ['rsi_position'], 'BOLL': ['boll_position'], 'MFI': ['mfi_position'],
@@ -82,7 +82,7 @@ adx_period = 14
 adx_threshold = 25
 long = 1
 short = -1
-interval = '1d'
+interval = '1h' ## put the interval here
 interval_limits = {
     '1m': 6,
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
@@ -91,7 +91,7 @@ interval_limits = {
 if interval in interval_limits:
     start_date = date.today() - timedelta(days=interval_limits[interval])
 else:
-    start_date = date.today() - timedelta(days=365*5)
+    start_date = date.today() - timedelta(days=365*5) ## change the year here
 def moving_avg():
     vals['MA50'] = df['Close'].rolling(Slow_moving).mean()
     vals['MA20'] = df['Close'].rolling(Fast_moving).mean()

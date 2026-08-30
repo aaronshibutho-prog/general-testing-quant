@@ -39,8 +39,8 @@ import pandas as pd
 #   MA    + BOLL + MFI    -> trend + mean-reversion + volume
 #   UTBot + RSI + SM      -> trend + momentum + volatility
 #   MACD  + SMC + CPR     -> trend + structure + pivot
-TICKER = "AAPL"
-tech_in = ['MFI']
+TICKER = "MSFT" ## ticker here
+tech_in = ['SM'] ## the indicators here
 ## You may allocate the weights 
 w_ma    = 1
 w_mfi   = 1
@@ -88,10 +88,10 @@ adx_threshold = 25
 buy_indicatior = 0.15
 sell_indicator = -0.15
 dummy_value = 1000
-lookback = -10000
+lookback = -500
 long = 1
-short = 0
-interval = '1d'
+short = -1
+interval = '1h' ##interval here
 interval_limits = {
     '1m': 6,
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
@@ -100,7 +100,7 @@ interval_limits = {
 if interval in interval_limits:
     start_date = date.today() - timedelta(days=interval_limits[interval])
 else:
-    start_date = date.today() - timedelta(days=365*3)
+    start_date = date.today() - timedelta(days=365*3) ## change the year here
 df = yf.download(TICKER, start=start_date, end=date.today(), interval= interval)
 df.columns = df.columns.get_level_values(0)
 vals = pd.DataFrame()
