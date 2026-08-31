@@ -7,12 +7,6 @@ This project is built to go beyond a single indicator by testing **nine indicato
 
 ---
 
-## Overview
-
-Backtests nine indicators individually, sweeps each one's parameter space per ticker, then scores multi-indicator combinations against industry peers to surface the setup most likely to work for a given stock — rather than relying on one signal in isolation.
-
----
-
 ## Markets Supported
 
 - **US equities** — enter the ticker as-is (e.g. `AAPL`, `NVDA`)
