@@ -40,7 +40,7 @@ import pandas as pd
 #   UTBot + RSI + SM      -> trend + momentum + volatility
 #   MACD  + SMC + CPR     -> trend + structure + pivot
 TICKER = "GOOGL" ## ticker here
-tech_in = ['MFI', 'SM'] ## the indicators here
+tech_in = ['MFI'] ## the indicators here
 ## You may allocate the weights 
 w_ma    = 1
 w_mfi   = 1
@@ -67,14 +67,14 @@ if total_weight > 0:
     w_cpr   = weights['cpr']   / total_weight if 'cpr'   in tech_in else 0
 Fast_moving = 20
 Slow_moving = 50
-mfi_period = 14
-mfi_buy = 30
-mfi_sell = 90
+mfi_period = 22
+mfi_buy = 25
+mfi_sell = 85
 boll_map = 10
 boll_stdmulti = 1.5
-rsi_period = 10
-rsi_buy = 30
-rsi_sell = 75
+rsi_period = 14
+rsi_buy = 20
+rsi_sell = 80
 fema = 12
 sema = 26
 bema = 9
@@ -91,7 +91,7 @@ sell_indicator = -0.15
 dummy_value = 1000
 lookback = -10000
 long = 1
-short = 0
+short = -1
 interval = '1h' ##interval here
 interval_limits = {
     '1m': 6,

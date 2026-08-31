@@ -3,9 +3,11 @@ import yfinance as yf
 from datetime import date, timedelta
 import pandas as pd
 import os
-ticks = pd.read_excel('industry_ticks.xlsx')
+ticker = 'HDFCBANK.NS' ##ticker here
+def industry_file_for(ticker):
+    return 'industry_ticks_india.xlsx' if ticker.endswith('.NS') else 'industry_ticks.xlsx'
+ticks = pd.read_excel(industry_file_for(ticker))
 company_industry = ticks.dropna(subset=['Industry'])
-ticker = 'AAPL' ##ticker here
 combos = {
     'MACD': ['macd_position'], 'MA': ['mov_position'], 'UTBot': ['utbot_position'],
     'RSI': ['rsi_position'], 'BOLL': ['boll_position'], 'MFI': ['mfi_position'],
@@ -50,13 +52,18 @@ def cap_bucket(cap):
     if cap >= 300_000_000: return 'small'
     return 'micro'
 peers = []
-markCap = get_cap(ticker , cap_cache)
+def get_cap_usd(symbol, cap_cache, fx_inr_usd=83):
+    cap = get_cap(symbol, cap_cache)
+    if cap is None:
+        return None
+    return cap / fx_inr_usd if symbol.endswith('.NS') else cap
+markCap = get_cap_usd(ticker , cap_cache)
 industry = stock.info.get('industry')
 same_industry = company_industry[company_industry['Industry'] == industry]
 stock_cap = cap_bucket(markCap)
 peers.append(ticker)
 for symbol in same_industry['Symbol']:
-    peer_cap = get_cap(symbol, cap_cache)
+    peer_cap = get_cap_usd(symbol, cap_cache)
     if peer_cap is None:
         continue
     if cap_bucket(peer_cap) == stock_cap and symbol != ticker:

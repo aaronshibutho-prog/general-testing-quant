@@ -6,7 +6,7 @@ from datetime import date, timedelta
 # (no category overlap) combo built from those optimized positions to find
 # the single best-performing "ultimate" combo. ADX gate stays fixed (25),
 # applied after each trend indicator's own search — same order as indicators.py.
-TICKER = "GOOGL" ## ticker here
+TICKER = "APOLLOHOSP.NS" ## ticker here
 Fast_moving = [5, 10, 15, 20, 25, 30]
 Slow_moving = [50, 100, 150, 200]
 mfi_period = [10, 14, 18, 22]
@@ -29,8 +29,8 @@ adx_period = 14
 adx_threshold = 25 ## kept constant, not swept
 dummy_value = 1000
 long = 1
-short = 0
-interval = '1d' ##interval here
+short = -1
+interval = '1h' ##interval here
 interval_limits = {
     '1m': 6,
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
