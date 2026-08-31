@@ -9,19 +9,7 @@ This project is built to go beyond a single indicator by testing **nine indicato
 
 ## Overview
 
-A single indicator rarely tells the full story. RSI can stay oversold through a real downtrend; a Bollinger breakout can be noise in a range-bound market. This engine tackles that by backtesting each indicator on its own, then layering in parameter optimization and peer-group validation before recommending a combo.
-
-The engine:
-
-- Extracts OHLCV price history using `yfinance.`
-- Backtests **nine individually-built indicators**
-- Applies an **ADX regime filter** to trend-following signals
-- Runs a **grid-search optimizer** per indicator, per ticker
-- Scores **multi-indicator combinations** against industry peers
-- Produces a final output such as:
-  - **Top 3 recommended combos** (median/avg return across peers)
-  - **Optimal parameter set** per indicator
-  - **Strategy vs. buy-and-hold** performance for any single run
+Backtests nine indicators individually, sweeps each one's parameter space per ticker, then scores multi-indicator combinations against industry peers to surface the setup most likely to work for a given stock — rather than relying on one signal in isolation.
 
 ---
 
