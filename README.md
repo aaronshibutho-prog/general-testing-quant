@@ -44,7 +44,7 @@ Set `ticker`/`TICKER` at the top of any script (`'AAPL'` or `'RELIANCE.NS'`), th
 ```bash
 python indicators.py             # live multi-indicator signal + backtest (full window to today)
 python optimizer.py              # per-indicator parameter grid search (training window)
-python strategy_finder.py        # per-ticker: optimize each indicator, find best combo
+python strategy_finder.py        # per-ticker: optimize each indicator (find best combo of training window)
 python peer_strategy_selector.py # peer-based combo recommendation (training window)
 python sector-cap-allocator.py   # pre-warm industry/cap cache
 ```
