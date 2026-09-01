@@ -89,7 +89,6 @@ adx_threshold = 25
 buy_indicatior = 0.15
 sell_indicator = -0.15
 dummy_value = 1000
-lookback = -10000
 long = 1
 short = -1
 interval = '1h' ##interval here
@@ -98,7 +97,7 @@ interval_limits = {
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
     '60m': 729, '1h': 729,
 }
-LOOKBACK = 180 ## change the days here
+LOOKBACK = 210 ## change the days here
 start_date = date.today() - timedelta(days=min(LOOKBACK, interval_limits.get(interval, LOOKBACK)))
 df = yf.download(TICKER, start=start_date, end=date.today(), interval= interval)
 df.columns = df.columns.get_level_values(0)
@@ -285,7 +284,7 @@ df['signal'] = np.select([df['totalPosition'] > buy_indicatior, df['totalPositio
 holdout_df = df.iloc[:].copy()
 holdout_df['strategy'] = dummy_value * np.cumprod(1 + holdout_df['dailyReturns'].fillna(0) * holdout_df['signal'].fillna(0))
 holdout_df['buy_hold'] = dummy_value * np.cumprod(1 + holdout_df['dailyReturns'].fillna(0))
-pdf = holdout_df[lookback:].copy()
+pdf = holdout_df[:].copy()
 pdf['strategy'] =  pdf['strategy'] / pdf['strategy'].iloc[0] * dummy_value
 pdf['buy_hold'] =  pdf['buy_hold'] / pdf['buy_hold'].iloc[0] * dummy_value
 print('Strategy final value:', pdf['strategy'].iloc[-1])

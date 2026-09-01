@@ -36,7 +36,7 @@ interval_limits = {
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
     '60m': 729, '1h': 729,
 }
-LOOKBACK = 180 ## change the days here
+LOOKBACK = 729 ## change the days here
 start_date = date.today() - timedelta(days=min(LOOKBACK, interval_limits.get(interval, LOOKBACK)))
 total_days = (date.today() - start_date).days
 ## takes the training period directly so that it could be tested in the indicators.py file
