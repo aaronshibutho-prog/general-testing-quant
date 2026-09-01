@@ -16,10 +16,8 @@ interval_limits = {
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
     '60m': 729, '1h': 729,
 }
-if interval in interval_limits:
-    start_date = date.today() - timedelta(days=interval_limits[interval])
-else:
-    start_date = date.today() - timedelta(days=365*10)
+LOOKBACK = 180 ## change the days here
+start_date = date.today() - timedelta(days=min(LOOKBACK, interval_limits.get(interval, LOOKBACK)))
 df = yf.download(ticker, start = start_date, end =  date.today(), interval= interval, multi_level_index= False)
 vals['tipsVal'] = (df['High'] + df['Low'] + df['Close']) / 3
 vals['rmf'] = vals['tipsVal'] * df['Volume']

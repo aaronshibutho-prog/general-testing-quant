@@ -3,6 +3,10 @@ import yfinance as yf
 from datetime import date, timedelta
 import pandas as pd
 import os
+# Finds industry + market-cap peers for the ticker, backtests every valid
+# (no category overlap) indicator combo on each over the training window,
+# and ranks combos by median return across peers — picks what works broadly,
+# not just what overfit one stock.
 ticker = 'HDFCBANK.NS' ##ticker here
 def industry_file_for(ticker):
     return 'industry_ticks_india.xlsx' if ticker.endswith('.NS') else 'industry_ticks.xlsx'
@@ -95,10 +99,11 @@ interval_limits = {
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
     '60m': 729, '1h': 729,
 }
-if interval in interval_limits:
-    start_date = date.today() - timedelta(days=interval_limits[interval])
-else:
-    start_date = date.today() - timedelta(days=365*5) ## change the year here
+LOOKBACK = 180 ## change the days here
+start_date = date.today() - timedelta(days=min(LOOKBACK, interval_limits.get(interval, LOOKBACK)))
+total_days = (date.today() - start_date).days
+## takes the training period directly so that it could be tested in the indicators.py file
+train_end = start_date + timedelta(days=int(total_days * 0.7))
 def moving_avg():
     vals['MA50'] = df['Close'].rolling(Slow_moving).mean()
     vals['MA20'] = df['Close'].rolling(Fast_moving).mean()
@@ -248,7 +253,7 @@ def adx():
     df['utbot_position'] = df['utbot_position'] * trend_allowed
 peer_gain =  {}
 for symbol in peers:
-    peer = yf.download(symbol, start = start_date, end = date.today(), interval=interval, multi_level_index= False)
+    peer = yf.download(symbol, start=start_date, end=train_end, interval=interval, multi_level_index=False)
     peer_gain[symbol] = {}
     for ind, pos in combos.items():
         df = peer.copy()

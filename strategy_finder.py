@@ -6,7 +6,7 @@ from datetime import date, timedelta
 # (no category overlap) combo built from those optimized positions to find
 # the single best-performing "ultimate" combo. ADX gate stays fixed (25),
 # applied after each trend indicator's own search — same order as indicators.py.
-TICKER = "APOLLOHOSP.NS" ## ticker here
+TICKER = "META" ## ticker here
 Fast_moving = [5, 10, 15, 20, 25, 30]
 Slow_moving = [50, 100, 150, 200]
 mfi_period = [10, 14, 18, 22]
@@ -36,11 +36,12 @@ interval_limits = {
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
     '60m': 729, '1h': 729,
 }
-if interval in interval_limits:
-    start_date = date.today() - timedelta(days=interval_limits[interval])
-else:
-    start_date = date.today() - timedelta(days=365*5) ## change the year here
-df = yf.download(TICKER, start=start_date, end=date.today(), interval=interval)
+LOOKBACK = 180 ## change the days here
+start_date = date.today() - timedelta(days=min(LOOKBACK, interval_limits.get(interval, LOOKBACK)))
+total_days = (date.today() - start_date).days
+## takes the training period directly so that it could be tested in the indicators.py file
+train_end = start_date + timedelta(days=int(total_days * 0.7)) 
+df = yf.download(TICKER, start=start_date, end=train_end, interval=interval)
 df.columns = df.columns.get_level_values(0)
 df['dailyReturns'] = df['Close'].pct_change()
 def mfi_opt():

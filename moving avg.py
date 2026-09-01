@@ -14,10 +14,8 @@ interval_limits = {
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
     '60m': 729, '1h': 729,
 }
-if interval in interval_limits:
-    start_date = date.today() - timedelta(days=interval_limits[interval])
-else:
-    start_date = date.today() - timedelta(days=365*5)
+LOOKBACK = 180 ## change the days here
+start_date = date.today() - timedelta(days=min(LOOKBACK, interval_limits.get(interval, LOOKBACK)))
 df = yf.download (TICKER, start= start_date, end= date.today(), interval= interval, multi_level_index=False)
 df['MA_S'] = df['Close'].rolling(Slow_moving).mean()
 df['MA_F'] = df['Close'].rolling(Fast_moving).mean()

@@ -98,10 +98,8 @@ interval_limits = {
     '2m': 59, '5m': 59, '15m': 59, '30m': 59, '90m': 59,
     '60m': 729, '1h': 729,
 }
-if interval in interval_limits:
-    start_date = date.today() - timedelta(days=interval_limits[interval])
-else:
-    start_date = date.today() - timedelta(days=365*2) ## change the year here
+LOOKBACK = 180 ## change the days here
+start_date = date.today() - timedelta(days=min(LOOKBACK, interval_limits.get(interval, LOOKBACK)))
 df = yf.download(TICKER, start=start_date, end=date.today(), interval= interval)
 df.columns = df.columns.get_level_values(0)
 vals = pd.DataFrame()
